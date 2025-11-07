@@ -59,7 +59,7 @@ const App: React.FC = () => {
 			<Button onClick={refreshData}>Refresh data</Button>
 
 			{data && (
-				<div className="flex items-center space-x-2">
+				<div className="flex items-center mt-2 space-x-2">
 					<Switch
 						checked={mergeCategories}
 						onCheckedChange={(checked) => {
