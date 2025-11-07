@@ -4,7 +4,6 @@ import {
 	Bar,
 	BarChart,
 	CartesianGrid,
-	Legend,
 	Rectangle,
 	Tooltip,
 	XAxis,
@@ -25,23 +24,26 @@ export const FrequencyBarChart: React.FC<Props> = ({ x, data }) => {
 	// transforms the data into an array of objects with x and the frequency of x
 	const frequencyData = useMemo(
 		() =>
-			data.reduce(
-				(acc, curr) => {
-					const frequencyObject = acc.find((obj) => obj.x === curr[x]);
+			data
+				.reduce(
+					(acc, curr) => {
+						const frequencyObject = acc.find((obj) => obj.x === curr[x]);
 
-					if (frequencyObject) {
-						frequencyObject.frequency++;
-					} else {
-						acc.push({
-							frequency: 1,
-							x: curr[x] as string,
-						});
-					}
+						if (frequencyObject) {
+							frequencyObject.frequency++;
+						} else {
+							acc.push({
+								frequency: 1,
+								x: curr[x] as string,
+							});
+						}
 
-					return acc;
-				},
-				[] as { x: string; frequency: number }[],
-			),
+						return acc;
+					},
+					[] as { x: string; frequency: number }[],
+				)
+				// sort by label
+				.toSorted((a, b) => a.x.localeCompare(b.x)),
 		[data],
 	);
 
@@ -52,22 +54,49 @@ export const FrequencyBarChart: React.FC<Props> = ({ x, data }) => {
 	return (
 		<BarChart
 			responsive
+			data={frequencyData}
 			style={{
 				width: '100%',
-				maxWidth: '700px',
+				maxWidth: '700%',
 				maxHeight: '70vh',
 				aspectRatio: 1.618,
 			}}
+			margin={{
+				bottom: 100,
+			}}
 		>
 			<CartesianGrid strokeDasharray="3 3" />
-			<XAxis dataKey="x" />
-			<YAxis dataKey="frequency" width="auto" />
-			<Tooltip />
-			<Legend />
-			<Bar
+			<XAxis
+				angle={-30}
+				textAnchor="end"
 				dataKey="x"
-				fill="var(--color-green-400)"
-				activeBar={<Rectangle fill="gold" stroke="purple" />}
+				stroke="var(--foreground)"
+			/>
+			<YAxis
+				dataKey="frequency"
+				width="auto"
+				label={{
+					value: 'Frequency',
+					position: 'insideLeft',
+					dx: 0,
+					dy: 20,
+					angle: -90,
+					fill: 'var(--foreground)',
+				}}
+				stroke="var(--foreground)"
+			></YAxis>
+			<Tooltip
+				cursor={{
+					fill: 'var(--muted)',
+				}}
+				contentStyle={{
+					backgroundColor: 'var(--card)',
+				}}
+			/>
+			<Bar
+				dataKey="frequency"
+				fill="var(--color-purple-400)"
+				activeBar={<Rectangle fill="var(--color-purple-600)" />}
 			/>
 		</BarChart>
 	);
