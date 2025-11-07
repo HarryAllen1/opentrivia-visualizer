@@ -13,6 +13,7 @@ export default defineConfig({
 		}),
 		tailwindcss(),
 	],
+	base: '/opentrivia-visualizer',
 	resolve: {
 		alias: {
 			'@': path.resolve(__dirname, './src'),
