@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
 	Bar,
 	BarChart,
@@ -13,14 +13,28 @@ import type { TriviaResult } from './api';
 
 interface Props {
 	x: keyof TriviaResult;
-	xLabel: string;
 	data: TriviaResult[];
+	/**
+	 * Sometimes, the labels get obscenely large.
+	 */
+	bottomMargin?: number;
+	xLabelRotation?: number;
+	/**
+	 * By default, sorts the labels alphabetically, but this can specify a custom order
+	 */
+	xLabelOrder?: string[];
 }
 
 /**
  * Displays a rechart bar graph where the y axis is the frequency of each x value throughout the given dataset.
  */
-export const FrequencyBarChart: React.FC<Props> = ({ x, data }) => {
+export const FrequencyBarChart: React.FC<Props> = ({
+	x,
+	data,
+	bottomMargin,
+	xLabelRotation,
+	xLabelOrder,
+}) => {
 	// transforms the data into an array of objects with x and the frequency of x
 	const frequencyData = useMemo(
 		() =>
@@ -42,14 +56,14 @@ export const FrequencyBarChart: React.FC<Props> = ({ x, data }) => {
 					},
 					[] as { x: string; frequency: number }[],
 				)
-				// sort by label
-				.toSorted((a, b) => a.x.localeCompare(b.x)),
+				// sort alphabetically (or by the given sort order) by label
+				.toSorted((a, b) =>
+					xLabelOrder && xLabelOrder.includes(a.x) && xLabelOrder.includes(b.x)
+						? xLabelOrder.indexOf(a.x) - xLabelOrder.indexOf(b.x)
+						: a.x.localeCompare(b.x),
+				),
 		[data],
 	);
-
-	useEffect(() => {
-		console.log(frequencyData);
-	}, [frequencyData]);
 
 	return (
 		<BarChart
@@ -62,13 +76,13 @@ export const FrequencyBarChart: React.FC<Props> = ({ x, data }) => {
 				aspectRatio: 1.618,
 			}}
 			margin={{
-				bottom: 100,
+				bottom: bottomMargin,
 			}}
 		>
-			<CartesianGrid strokeDasharray="3 3" />
+			<CartesianGrid strokeDasharray="2 2" />
 			<XAxis
-				angle={-30}
-				textAnchor="end"
+				angle={xLabelRotation}
+				textAnchor={xLabelRotation ? 'end' : 'middle'}
 				dataKey="x"
 				stroke="var(--foreground)"
 			/>

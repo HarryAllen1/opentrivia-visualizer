@@ -1,48 +1,50 @@
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import React, { useEffect, useMemo, useState } from 'react';
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { InfoIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { getTriviaQuestions, type TriviaResult } from './api';
-import { MultiSelect } from './components/ui/multi-select';
-import { Visualizer } from './Visualizer';
+import { DataContainer } from './DataContainer';
 
 // Must be <=50
 const NUM_QUESTIONS_VISUALIZED = 50;
 
 const App: React.FC = () => {
 	const [data, setData] = useState<TriviaResult[] | undefined>();
-	const [errorText, setErrorText] = useState<string | undefined>();
-	const [categories, setCategories] = useState<string[]>([]);
-	const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-	const filteredCategories = useMemo(
-		() =>
-			data?.filter((result) => selectedCategories.includes(result.category)) ??
-			[],
-		[selectedCategories],
-	);
+	const [mergeCategories, setMergeCategories] = useState(false);
+	const [potentiallyMergedData, setPotentiallyMergedData] = useState<
+		TriviaResult[] | undefined
+	>();
 
-	useEffect(() => {
+	const refreshData = () => {
 		getTriviaQuestions(NUM_QUESTIONS_VISUALIZED).then((results) => {
 			try {
 				setData(results);
-
-				const allCategories = [
-					...new Set(results?.map((question) => question.category)),
-				].toSorted((a, b) => a.localeCompare(b));
-				setCategories(allCategories);
-				// By default, show all categories
-				setSelectedCategories(allCategories);
+				if (mergeCategories) {
+					setPotentiallyMergedData(getMergedData(results));
+				} else {
+					setPotentiallyMergedData(results);
+				}
 			} catch (error: unknown) {
 				console.error(error);
-				setErrorText(
-					error &&
-						typeof error === 'object' &&
-						'message' in error &&
-						typeof error.message === 'string'
-						? error.message
-						: 'An unknown error occurred.',
-				);
 			}
 		});
-	}, []);
+	};
+
+	const getMergedData = (data: TriviaResult[]) =>
+		data.map((result) => ({
+			...result,
+			category: result.category.includes(':')
+				? result.category.slice(0, result.category.indexOf(':'))
+				: result.category,
+		}));
+
+	useEffect(refreshData, []);
 
 	return (
 		<div className="container mx-auto my-4">
@@ -54,26 +56,43 @@ const App: React.FC = () => {
 				Number of questions visualized: {NUM_QUESTIONS_VISUALIZED}
 			</p>
 
-			<div className="my-2 max-w-lg">
-				<Label htmlFor="filter">Filter by category</Label>
-				<MultiSelect
-					defaultValue={selectedCategories}
-					options={categories.map((category) => ({
-						value: category,
-						label: category,
-					}))}
-					value={selectedCategories}
-					onValueChange={setSelectedCategories}
-				/>
-			</div>
+			<Button onClick={refreshData}>Refresh data</Button>
 
-			<div>
-				{data ? (
-					<Visualizer data={filteredCategories} />
-				) : (
-					(errorText ?? <p>Fetching results...</p>)
-				)}
-			</div>
+			{data && (
+				<div className="flex items-center space-x-2">
+					<Switch
+						checked={mergeCategories}
+						onCheckedChange={(checked) => {
+							setMergeCategories(checked);
+							if (checked) {
+								setPotentiallyMergedData(getMergedData(data));
+							} else {
+								setPotentiallyMergedData(data);
+							}
+						}}
+						id="merge-categories"
+					/>
+					<Label htmlFor="merge-categories">
+						Merge categories
+						<Popover>
+							<PopoverTrigger>
+								<InfoIcon />
+							</PopoverTrigger>
+							<PopoverContent>
+								The OpenTrivia API likes to subcategorise question categories.
+								Enabling this merges similar categories (e.g., 'entertainment:
+								video games' and 'entertainment: anime').
+							</PopoverContent>
+						</Popover>
+					</Label>
+				</div>
+			)}
+
+			{potentiallyMergedData ? (
+				<DataContainer data={potentiallyMergedData} />
+			) : (
+				<p>Fetching data...</p>
+			)}
 		</div>
 	);
 };

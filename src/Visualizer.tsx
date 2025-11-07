@@ -18,7 +18,12 @@ export const Visualizer: React.FC<{
 				<TabsContent value="category">
 					<Card>
 						<CardContent>
-							<FrequencyBarChart data={data} x="category" xLabel="Category" />
+							<FrequencyBarChart
+								xLabelRotation={-30}
+								data={data}
+								x="category"
+								bottomMargin={150}
+							/>
 						</CardContent>
 					</Card>
 				</TabsContent>
@@ -28,7 +33,8 @@ export const Visualizer: React.FC<{
 							<FrequencyBarChart
 								data={data}
 								x="difficulty"
-								xLabel="Difficulty"
+								xLabelOrder={['easy', 'medium', 'hard']}
+								bottomMargin={30}
 							/>
 						</CardContent>
 					</Card>
